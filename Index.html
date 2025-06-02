@@ -1,0 +1,501 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Game Tebak Angka</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #4361ee;
+            --primary-dark: #3a56d4;
+            --secondary: #3f37c9;
+            --accent: #f72585;
+            --light: #f8f9fa;
+            --dark: #1a1a2e;
+            --gradient: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+            --shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+        }
+
+        body {
+            font-family: 'Poppins', sans-serif;
+            background-color: var(--dark);
+            color: var(--light);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .rdcoder-bg {
+            position: absolute;
+            color: rgba(255, 255, 255, 0.03);
+            font-size: 20vw;
+            font-weight: 700;
+            z-index: 0;
+            user-select: none;
+            pointer-events: none;
+            animation: float 20s infinite linear;
+        }
+
+        @keyframes float {
+            0% { transform: translate(-50%, -50%) rotate(0deg); }
+            100% { transform: translate(-50%, -50%) rotate(360deg); }
+        }
+
+        .game-container {
+            background: rgba(26, 26, 46, 0.9);
+            backdrop-filter: blur(10px);
+            padding: 2.5rem;
+            border-radius: 20px;
+            box-shadow: var(--shadow);
+            text-align: center;
+            width: 90%;
+            max-width: 450px;
+            position: relative;
+            z-index: 1;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .game-container::before {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 5px;
+            background: var(--gradient);
+        }
+
+        .logo {
+            font-size: 2.5rem;
+            font-weight: 700;
+            background: var(--gradient);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            margin-bottom: 0.5rem;
+        }
+
+        h1 {
+            font-size: 1.8rem;
+            margin-bottom: 1rem;
+            color: var(--light);
+        }
+
+        .subtitle {
+            color: rgba(255, 255, 255, 0.7);
+            margin-bottom: 2rem;
+        }
+
+        input[type="number"] {
+            padding: 1rem;
+            width: 100%;
+            margin: 1rem 0;
+            font-size: 1rem;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 10px;
+            color: var(--light);
+            text-align: center;
+        }
+
+        input[type="number"]:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(67, 97, 238, 0.3);
+        }
+
+        button {
+            background: var(--gradient);
+            color: white;
+            border: none;
+            padding: 1rem;
+            width: 100%;
+            margin: 0.5rem 0;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            border-radius: 10px;
+            transition: transform 0.3s, box-shadow 0.3s;
+        }
+
+        button:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+        }
+
+        .result {
+            margin: 1.5rem 0;
+            padding: 1rem;
+            border-radius: 10px;
+            font-weight: 600;
+        }
+
+        .success {
+            background: rgba(76, 201, 240, 0.1);
+            color: #4cc9f0;
+            border: 1px solid rgba(76, 201, 240, 0.3);
+        }
+
+        .warning {
+            background: rgba(255, 193, 7, 0.1);
+            color: #ffc107;
+            border: 1px solid rgba(255, 193, 7, 0.3);
+        }
+
+        .reset-btn {
+            background: transparent;
+            border: 1px solid var(--accent);
+            color: var(--accent);
+        }
+
+        .reset-btn:hover {
+            background: var(--accent);
+            color: white;
+        }
+
+        .attempts {
+            margin-top: 1rem;
+            color: rgba(255, 255, 255, 0.6);
+        }
+    </style>
+</head>
+<body>
+    <!-- Background RDCODER -->
+    <div class="rdcoder-bg" style="top: 20%; left: 20%;">RDCODER</div>
+    <div class="rdcoder-bg" style="top: 70%; left: 80%; animation-delay: -5s;">RDCODER</div>
+    <div class="rdcoder-bg" style="top: 40%; left: 60%; animation-delay: -10s;">RDCODER</div>
+
+    <div class="game-container">
+        <div class="logo">RDCODER</div>
+        <h1>Tebak Angka Sederhana</h1>
+        <p class="subtitle">Tebak angka rahasia antara 1 sampai 100</p>
+
+        <input type="number" id="guessInput" placeholder="Jawab..." min="1" max="100">
+        
+        <button onclick="checkGuess()">Submit</button>
+
+        <div class="result" id="result"></div>
+        <div class="attempts" id="attempts">Percobaan: 0</div>
+
+        <button class="reset-btn" id="resetBtn" onclick="resetGame()" style="display: none;">Main Lagi</button>
+    </div>
+
+    <script>
+        let randomNumber;
+        let attempts = 0;
+
+        function startGame() {
+            randomNumber = Math.floor(Math.random() * 100) + 1;
+            attempts = 0;
+            document.getElementById("result").innerText = '';
+            document.getElementById("attempts").innerText = 'Percobaan: 0';
+            document.getElementById("resetBtn").style.display = 'none';
+            document.getElementById("guessInput").value = '';
+            document.getElementById("guessInput").focus();
+        }
+
+        function checkGuess() {
+            const guessInput = document.getElementById("guessInput");
+            const userGuess = parseInt(guessInput.value);
+            const resultElement = document.getElementById("result");
+            
+            if (isNaN(userGuess)) {
+                resultElement.innerText = "Harap masukkan angka yang valid!";
+                resultElement.className = 'result warning';
+                return;
+            }
+            
+            if (userGuess < 1 || userGuess > 100) {
+                resultElement.innerText = "Angka harus antara 1 dan 100!";
+                resultElement.className = 'result warning';
+                return;
+            }
+
+            attempts++;
+            document.getElementById("attempts").innerText = `Percobaan: ${attempts}`;
+            
+            if (userGuess === randomNumber) {
+                resultElement.innerText = `🎉 Selamat! Anda menebak dengan benar dalam ${attempts} percobaan! 🎉`;
+                resultElement.className = 'result success';
+                document.getElementById("resetBtn").style.display = 'block';
+            } else if (userGuess < randomNumber) {
+                resultElement.innerText = "Terlalu rendah! Coba angka lebih tinggi.";
+                resultElement.className = 'result warning';
+            } else {
+                resultElement.innerText = "Terlalu tinggi! Coba angka lebih rendah.";
+                resultElement.className = 'result warning';
+            }
+            
+            guessInput.value = '';
+            guessInput.focus();
+        }
+
+        function resetGame() {
+            startGame();
+        }
+
+        document.getElementById("guessInput").addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                checkGuess();
+            }
+        });
+
+        window.onload = startGame;
+    </script>
+</body>
+</html><!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Game Tebak Angka</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #4361ee;
+            --primary-dark: #3a56d4;
+            --secondary: #3f37c9;
+            --accent: #f72585;
+            --light: #f8f9fa;
+            --dark: #1a1a2e;
+            --gradient: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+            --shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+        }
+
+        body {
+            font-family: 'Poppins', sans-serif;
+            background-color: var(--dark);
+            color: var(--light);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .rdcoder-bg {
+            position: absolute;
+            color: rgba(255, 255, 255, 0.03);
+            font-size: 20vw;
+            font-weight: 700;
+            z-index: 0;
+            user-select: none;
+            pointer-events: none;
+            animation: float 20s infinite linear;
+        }
+
+        @keyframes float {
+            0% { transform: translate(-50%, -50%) rotate(0deg); }
+            100% { transform: translate(-50%, -50%) rotate(360deg); }
+        }
+
+        .game-container {
+            background: rgba(26, 26, 46, 0.9);
+            backdrop-filter: blur(10px);
+            padding: 2.5rem;
+            border-radius: 20px;
+            box-shadow: var(--shadow);
+            text-align: center;
+            width: 90%;
+            max-width: 450px;
+            position: relative;
+            z-index: 1;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .game-container::before {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 5px;
+            background: var(--gradient);
+        }
+
+        .logo {
+            font-size: 2.5rem;
+            font-weight: 700;
+            background: var(--gradient);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            margin-bottom: 0.5rem;
+        }
+
+        h1 {
+            font-size: 1.8rem;
+            margin-bottom: 1rem;
+            color: var(--light);
+        }
+
+        .subtitle {
+            color: rgba(255, 255, 255, 0.7);
+            margin-bottom: 2rem;
+        }
+
+        input[type="number"] {
+            padding: 1rem;
+            width: 100%;
+            margin: 1rem 0;
+            font-size: 1rem;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 10px;
+            color: var(--light);
+            text-align: center;
+        }
+
+        input[type="number"]:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(67, 97, 238, 0.3);
+        }
+
+        button {
+            background: var(--gradient);
+            color: white;
+            border: none;
+            padding: 1rem;
+            width: 100%;
+            margin: 0.5rem 0;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            border-radius: 10px;
+            transition: transform 0.3s, box-shadow 0.3s;
+        }
+
+        button:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+        }
+
+        .result {
+            margin: 1.5rem 0;
+            padding: 1rem;
+            border-radius: 10px;
+            font-weight: 600;
+        }
+
+        .success {
+            background: rgba(76, 201, 240, 0.1);
+            color: #4cc9f0;
+            border: 1px solid rgba(76, 201, 240, 0.3);
+        }
+
+        .warning {
+            background: rgba(255, 193, 7, 0.1);
+            color: #ffc107;
+            border: 1px solid rgba(255, 193, 7, 0.3);
+        }
+
+        .reset-btn {
+            background: transparent;
+            border: 1px solid var(--accent);
+            color: var(--accent);
+        }
+
+        .reset-btn:hover {
+            background: var(--accent);
+            color: white;
+        }
+
+        .attempts {
+            margin-top: 1rem;
+            color: rgba(255, 255, 255, 0.6);
+        }
+    </style>
+</head>
+<body>
+    <!-- Background RDCODER -->
+    <div class="rdcoder-bg" style="top: 20%; left: 20%;">RDCODER</div>
+    <div class="rdcoder-bg" style="top: 70%; left: 80%; animation-delay: -5s;">RDCODER</div>
+    <div class="rdcoder-bg" style="top: 40%; left: 60%; animation-delay: -10s;">RDCODER</div>
+
+    <div class="game-container">
+        <div class="logo">RDCODER</div>
+        <h1>Tebak Angka Sederhana</h1>
+        <p class="subtitle">Tebak angka rahasia antara 1 sampai 100</p>
+
+        <input type="number" id="guessInput" placeholder="Jawab..." min="1" max="100">
+        
+        <button onclick="checkGuess()">Submit</button>
+
+        <div class="result" id="result"></div>
+        <div class="attempts" id="attempts">Percobaan: 0</div>
+
+        <button class="reset-btn" id="resetBtn" onclick="resetGame()" style="display: none;">Main Lagi</button>
+    </div>
+
+    <script>
+        let randomNumber;
+        let attempts = 0;
+
+        function startGame() {
+            randomNumber = Math.floor(Math.random() * 100) + 1;
+            attempts = 0;
+            document.getElementById("result").innerText = '';
+            document.getElementById("attempts").innerText = 'Percobaan: 0';
+            document.getElementById("resetBtn").style.display = 'none';
+            document.getElementById("guessInput").value = '';
+            document.getElementById("guessInput").focus();
+        }
+
+        function checkGuess() {
+            const guessInput = document.getElementById("guessInput");
+            const userGuess = parseInt(guessInput.value);
+            const resultElement = document.getElementById("result");
+            
+            if (isNaN(userGuess)) {
+                resultElement.innerText = "Harap masukkan angka yang valid!";
+                resultElement.className = 'result warning';
+                return;
+            }
+            
+            if (userGuess < 1 || userGuess > 100) {
+                resultElement.innerText = "Angka harus antara 1 dan 100!";
+                resultElement.className = 'result warning';
+                return;
+            }
+
+            attempts++;
+            document.getElementById("attempts").innerText = `Percobaan: ${attempts}`;
+            
+            if (userGuess === randomNumber) {
+                resultElement.innerText = `🎉 Selamat! Anda menebak dengan benar dalam ${attempts} percobaan! 🎉`;
+                resultElement.className = 'result success';
+                document.getElementById("resetBtn").style.display = 'block';
+            } else if (userGuess < randomNumber) {
+                resultElement.innerText = "Terlalu rendah! Coba angka lebih tinggi.";
+                resultElement.className = 'result warning';
+            } else {
+                resultElement.innerText = "Terlalu tinggi! Coba angka lebih rendah.";
+                resultElement.className = 'result warning';
+            }
+            
+            guessInput.value = '';
+            guessInput.focus();
+        }
+
+        function resetGame() {
+            startGame();
+        }
+
+        document.getElementById("guessInput").addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                checkGuess();
+            }
+        });
+
+        window.onload = startGame;
+    </script>
+</body>
+</html>
